@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Startup Venture Ecosystem: Founder–Investor Core Network</title>
+    <!-- vis-network CSS & JS -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        #mynetwork {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* Modern Glassmorphic UI Overlays */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+            z-index: 10;
+        }
+
+        /* Header Navigation */
+        .header-bar {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 24px;
+            width: calc(100% - 48px);
+            max-width: 1400px;
+        }
+        .header-title-box h1 {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header-title-box p {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .badge-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .badge-investor { color: #c084fc; border-color: rgba(192, 132, 252, 0.3); background: rgba(147, 51, 234, 0.15); }
+        .badge-startup { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); background: rgba(37, 99, 235, 0.15); }
+        .badge-founder { color: #fb923c; border-color: rgba(251, 146, 60, 0.3); background: rgba(234, 88, 12, 0.15); }
+        .badge-total { color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); background: rgba(14, 165, 233, 0.15); }
+
+        /* Left Sidebar: Legend & Guide */
+        .left-sidebar {
+            position: absolute;
+            top: 86px;
+            left: 24px;
+            width: 320px;
+            max-height: calc(100vh - 110px);
+            overflow-y: auto;
+            padding: 18px;
+        }
+        .sidebar-heading {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .legend-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            margin-top: 2px;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px currentColor;
+        }
+        .guide-box {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 11.5px;
+            color: #cbd5e1;
+            line-height: 1.5;
+            border-left: 3px solid #38bdf8;
+            margin-top: 12px;
+        }
+        .guide-box b {
+            color: #ffffff;
+        }
+
+        /* Right Sidebar: Controls & Inspector */
+        .right-sidebar {
+            position: absolute;
+            top: 86px;
+            right: 24px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .control-card {
+            padding: 16px;
+        }
+        .search-box {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 9px 12px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 12.5px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+        }
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .filter-btn {
+            flex: 1 1 calc(50% - 4px);
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            color: #cbd5e1;
+            font-size: 11.5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+        .filter-btn.active {
+            background: #2563eb;
+            color: #fff;
+            border-color: #3b82f6;
+        }
+
+        /* Node Inspector Card */
+        .inspector-card {
+            padding: 16px;
+            display: none;
+        }
+        .inspector-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+        .inspector-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .inspector-metric {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .inspector-metric b {
+            color: #f1f5f9;
+        }
+        .inspector-neighbors {
+            margin-top: 10px;
+            font-size: 11.5px;
+            color: #cbd5e1;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+
+        /* Loading progress overlay */
+        #loadingBar {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            height: 70px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            z-index: 99;
+            transition: opacity 0.5s ease;
+        }
+        .progress-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #38bdf8, #818cf8);
+            transition: width 0.15s ease;
+        }
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 500;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Header Navigation -->
+    <div class="header-bar glass-panel">
+        <div class="header-title-box">
+            <h1>🇮🇳 Indian Startup Venture Ecosystem: Tripartite Core Network</h1>
+        </div>
+        <div class="badge-group">
+            <div class="metric-badge badge-investor">🟣 30 Core VCs / Investors</div>
+            <div class="metric-badge badge-startup">🔵 60 Funded Startups</div>
+            <div class="metric-badge badge-founder">🟠 131 Founding Teams</div>
+            <div class="metric-badge badge-total">🔗 200 Core Links</div>
+        </div>
+    </div>
+
+    <!-- Left Sidebar: Legend & Interpretation Guide -->
+    <div class="left-sidebar glass-panel">
+        <div class="sidebar-heading">
+            <span>Visual Legend</span>
+            <span style="font-size:10px; color:#38bdf8;">Tripartite View</span>
+        </div>
+        <div class="legend-list">
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#9467bd; color:#9467bd;"></div>
+                <div>
+                    <b style="color:#c084fc;">Investors (Violet)</b><br>
+                    Institutional venture funds, CVCs & angels. Node radius is proportional to <b>PageRank prestige</b> & deal degree.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#1f77b4; color:#1f77b4;"></div>
+                <div>
+                    <b style="color:#60a5fa;">Startups (Blue)</b><br>
+                    Portfolio firms. Node radius reflects <b>capital volume</b> & total syndicate backing size.
+                </div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#ff7f0e; color:#ff7f0e;"></div>
+                <div>
+                    <b style="color:#fb923c;">Founders (Orange)</b><br>
+                    Entrepreneurial human capital linking teams directly to ventures.
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-heading" style="margin-top: 18px;">How to Read the Graph</div>
+        <div class="guide-box">
+            <b>1. Syndicate Clusters:</b> Dense groups revolving around mega-investors (e.g. Tiger Global, Sequoia, Accel, 9Unicorns) indicate frequent co-investment syndicates.<br><br>
+            <b>2. Information Brokers:</b> Nodes positioned between clusters exhibit high <i>betweenness centrality</i>, acting as essential capital bridges.<br><br>
+            <b>3. Interactive Focus:</b> Click any node to instantly isolate and highlight its direct 1st and 2nd degree ecosystem partners.
+        </div>
+    </div>
+
+    <!-- Right Sidebar: Interactive Controls & Node Inspector -->
+    <div class="right-sidebar">
+        <!-- Control Card -->
+        <div class="control-card glass-panel">
+            <div class="sidebar-heading">Search & Filters</div>
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search investor, startup, or founder...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterNodeType('All')">Show All</button>
+                <button class="filter-btn" onclick="filterNodeType('Investor')">Only VCs</button>
+                <button class="filter-btn" onclick="filterNodeType('Startup')">Only Startups</button>
+                <button class="filter-btn" onclick="filterNodeType('Founder')">Only Founders</button>
+                <button class="filter-btn" style="flex:1 1 100%;" onclick="resetHighlight()">Reset Camera & Focus</button>
+            </div>
+        </div>
+
+        <!-- Node Inspector Card (Dynamic on click) -->
+        <div id="inspectorCard" class="inspector-card glass-panel">
+            <div class="sidebar-heading">Entity Inspector</div>
+            <div id="inspectorTitle" class="inspector-title">Tiger Global</div>
+            <span id="inspectorType" class="inspector-badge badge-investor">Investor</span>
+            <div class="inspector-metric">
+                <span>Degree (Direct Ties):</span>
+                <b id="inspectorDegree">20</b>
+            </div>
+            <div class="inspector-metric">
+                <span>Network Role:</span>
+                <b id="inspectorRole">Growth Syndicate Lead</b>
+            </div>
+            <div style="margin-top:10px; font-weight:600; font-size:11.5px; color:#94a3b8;">Direct Portfolio / Co-Ties:</div>
+            <div id="inspectorNeighbors" class="inspector-neighbors">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Loading Bar -->
+    <div id="loadingBar">
+        <div class="progress-text">
+            <span>Stabilizing Physics Simulation...</span>
+            <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-track">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+    </div>
+
+    <!-- Canvas -->
+    <div id="mynetwork"></div>
+
+    <script type="text/javascript">
+        var rawNodes = [{"color": "#9467bd", "font": {"color": "white"}, "id": "Tiger Global", "label": "Tiger Global", "shape": "dot", "size": 29.88854381999832, "title": "Investor: Tiger Global<br>Degree: 20", "node_type": "Investor"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "SimpliContract", "label": "SimpliContract", "shape": "dot", "size": 20.0, "title": "Startup: SimpliContract<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "OneCode", "label": "OneCode", "shape": "dot", "size": 20.0, "title": "Startup: OneCode<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Remedico", "label": "Remedico", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Remedico<br>Degree: 3", "node_type": "Startup"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Westbridge Capital", "label": "Westbridge Capital", "shape": "dot", "size": 20.0, "title": "Investor: Westbridge Capital<br>Degree: 4", "node_type": "Investor"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Questt", "label": "Questt", "shape": "dot", "size": 23.31370849898476, "title": "Startup: Questt<br>Degree: 8", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Otipy", "label": "Otipy", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Otipy<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Insurance Samadhan", "label": "Insurance Samadhan", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Insurance Samadhan<br>Degree: 3", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Anurag Vaish", "label": "Anurag Vaish", "shape": "dot", "size": 16.0, "title": "Founder: Anurag Vaish<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Smartstaff", "label": "Smartstaff", "shape": "dot", "size": 21.79795897113271, "title": "Startup: Smartstaff<br>Degree: 6", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Jasmeet Thind", "label": "Jasmeet Thind", "shape": "dot", "size": 16.0, "title": "Founder: Jasmeet Thind<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Praneeth Kumar", "label": "Praneeth Kumar", "shape": "dot", "size": 16.0, "title": "Founder: Praneeth Kumar<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Rahul Arora", "label": "Rahul Arora", "shape": "dot", "size": 16.0, "title": "Founder: Rahul Arora<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "ConnectedH", "label": "ConnectedH", "shape": "dot", "size": 20.94427190999916, "title": "Startup: ConnectedH<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Leap India", "label": "Leap India", "shape": "dot", "size": 17.65685424949238, "title": "Startup: Leap India<br>Degree: 2", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Lenskart", "label": "Lenskart", "shape": "dot", "size": 21.79795897113271, "title": "Startup: Lenskart<br>Degree: 6", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Boutique Spirit Brands", "label": "Boutique Spirit Brands", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Boutique Spirit Brands<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Power Gummies", "label": "Power Gummies", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Power Gummies<br>Degree: 3", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Adarsh Anand", "label": "Adarsh Anand", "shape": "dot", "size": 16.0, "title": "Founder: Adarsh Anand<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Akash Sinha", "label": "Akash Sinha", "shape": "dot", "size": 16.0, "title": "Founder: Akash Sinha<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Manish Shara", "label": "Manish Shara", "shape": "dot", "size": 16.0, "title": "Founder: Manish Shara<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Porter", "label": "Porter", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Porter<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "YAP", "label": "YAP", "shape": "dot", "size": 20.0, "title": "Startup: YAP<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Cashfree", "label": "Cashfree", "shape": "dot", "size": 20.0, "title": "Startup: Cashfree<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Postman", "label": "Postman", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Postman<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Camp K12", "label": "Camp K12", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Camp K12<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Trica", "label": "Trica", "shape": "dot", "size": 17.65685424949238, "title": "Startup: Trica<br>Degree: 2", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "SarvaGram", "label": "SarvaGram", "shape": "dot", "size": 18.928203230275507, "title": "Startup: SarvaGram<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "GuardianLink", "label": "GuardianLink", "shape": "dot", "size": 18.928203230275507, "title": "Startup: GuardianLink<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Wherehouse.io", "label": "Wherehouse.io", "shape": "dot", "size": 20.0, "title": "Startup: Wherehouse.io<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "GoKwik", "label": "GoKwik", "shape": "dot", "size": 23.31370849898476, "title": "Startup: GoKwik<br>Degree: 8", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Zupee", "label": "Zupee", "shape": "dot", "size": 22.583005244258363, "title": "Startup: Zupee<br>Degree: 7", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "CARS24", "label": "CARS24", "shape": "dot", "size": 20.94427190999916, "title": "Startup: CARS24<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Rentomojo", "label": "Rentomojo", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Rentomojo<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Sanfe", "label": "Sanfe", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Sanfe<br>Degree: 5", "node_type": "Startup"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "GIC", "label": "GIC", "shape": "dot", "size": 18.928203230275507, "title": "Investor: GIC<br>Degree: 3", "node_type": "Investor"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "RENEE Cosmetics", "label": "RENEE Cosmetics", "shape": "dot", "size": 20.94427190999916, "title": "Startup: RENEE Cosmetics<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Coutloot", "label": "Coutloot", "shape": "dot", "size": 20.0, "title": "Startup: Coutloot<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "ElasticRun", "label": "ElasticRun", "shape": "dot", "size": 20.94427190999916, "title": "Startup: ElasticRun<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Neeman", "label": "Neeman", "shape": "dot", "size": 17.65685424949238, "title": "Startup: Neeman<br>Degree: 2", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Abhijit Kane", "label": "Abhijit Kane", "shape": "dot", "size": 16.0, "title": "Founder: Abhijit Kane<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Akhil Singh", "label": "Akhil Singh", "shape": "dot", "size": 16.0, "title": "Founder: Akhil Singh<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Amit Chaudhary", "label": "Amit Chaudhary", "shape": "dot", "size": 16.0, "title": "Founder: Amit Chaudhary<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Shadez", "label": "Shadez", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Shadez<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Instoried", "label": "Instoried", "shape": "dot", "size": 21.79795897113271, "title": "Startup: Instoried<br>Degree: 6", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "CHARGE+ZONE", "label": "CHARGE+ZONE", "shape": "dot", "size": 17.65685424949238, "title": "Startup: CHARGE+ZONE<br>Degree: 2", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kevin William David", "label": "Kevin William David", "shape": "dot", "size": 16.0, "title": "Founder: Kevin William David<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Fieldproxy", "label": "Fieldproxy", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Fieldproxy<br>Degree: 5", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vaibhav Porwal", "label": "Vaibhav Porwal", "shape": "dot", "size": 16.0, "title": "Founder: Vaibhav Porwal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Swaroop Vijayakumar", "label": "Swaroop Vijayakumar", "shape": "dot", "size": 16.0, "title": "Founder: Swaroop Vijayakumar<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Arpit Dave", "label": "Arpit Dave", "shape": "dot", "size": 16.0, "title": "Founder: Arpit Dave<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Omidyar Network India", "label": "Omidyar Network India", "shape": "dot", "size": 23.31370849898476, "title": "Investor: Omidyar Network India<br>Degree: 8", "node_type": "Investor"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Bimaplan", "label": "Bimaplan", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Bimaplan<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "NimbleBox.ai", "label": "NimbleBox.ai", "shape": "dot", "size": 18.928203230275507, "title": "Startup: NimbleBox.ai<br>Degree: 3", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Srinivasan Narayan", "label": "Srinivasan Narayan", "shape": "dot", "size": 16.0, "title": "Founder: Srinivasan Narayan<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Vegrow", "label": "Vegrow", "shape": "dot", "size": 21.79795897113271, "title": "Startup: Vegrow<br>Degree: 6", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Elevar", "label": "Elevar", "shape": "dot", "size": 20.0, "title": "Startup: Elevar<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Ergos", "label": "Ergos", "shape": "dot", "size": 20.0, "title": "Startup: Ergos<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Goodmeetings", "label": "Goodmeetings", "shape": "dot", "size": 17.65685424949238, "title": "Startup: Goodmeetings<br>Degree: 2", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Dezerv.", "label": "Dezerv.", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Dezerv.<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Mailmodo", "label": "Mailmodo", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Mailmodo<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Homeville", "label": "Homeville", "shape": "dot", "size": 18.928203230275507, "title": "Startup: Homeville<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "CredRight", "label": "CredRight", "shape": "dot", "size": 20.0, "title": "Startup: CredRight<br>Degree: 4", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Apurv Gupta", "label": "Apurv Gupta", "shape": "dot", "size": 16.0, "title": "Founder: Apurv Gupta<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "NOTO", "label": "NOTO", "shape": "dot", "size": 21.79795897113271, "title": "Startup: NOTO<br>Degree: 6", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ishita Verma", "label": "Ishita Verma", "shape": "dot", "size": 16.0, "title": "Founder: Ishita Verma<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "SplashLearn", "label": "SplashLearn", "shape": "dot", "size": 21.79795897113271, "title": "Startup: SplashLearn<br>Degree: 6", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Chirrup", "label": "Chirrup", "shape": "dot", "size": 22.583005244258363, "title": "Startup: Chirrup<br>Degree: 7", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "GoMechanic", "label": "GoMechanic", "shape": "dot", "size": 18.928203230275507, "title": "Startup: GoMechanic<br>Degree: 3", "node_type": "Startup"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "CDC Group", "label": "CDC Group", "shape": "dot", "size": 22.583005244258363, "title": "Investor: CDC Group<br>Degree: 7", "node_type": "Investor"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Go Swift", "label": "Go Swift", "shape": "dot", "size": 20.0, "title": "Startup: Go Swift<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "CreatorStack", "label": "CreatorStack", "shape": "dot", "size": 18.928203230275507, "title": "Startup: CreatorStack<br>Degree: 3", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Intervue", "label": "Intervue", "shape": "dot", "size": 20.0, "title": "Startup: Intervue<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "HealthPlix", "label": "HealthPlix", "shape": "dot", "size": 20.0, "title": "Startup: HealthPlix<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Airblack", "label": "Airblack", "shape": "dot", "size": 20.0, "title": "Startup: Airblack<br>Degree: 4", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "FloBiz", "label": "FloBiz", "shape": "dot", "size": 20.94427190999916, "title": "Startup: FloBiz<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Vayana Network", "label": "Vayana Network", "shape": "dot", "size": 20.94427190999916, "title": "Startup: Vayana Network<br>Degree: 5", "node_type": "Startup"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Miko", "label": "Miko", "shape": "dot", "size": 25.2664991614216, "title": "Startup: Miko<br>Degree: 11", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Mrudhukar Batchu", "label": "Mrudhukar Batchu", "shape": "dot", "size": 16.0, "title": "Founder: Mrudhukar Batchu<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "FRAAZO", "label": "FRAAZO", "shape": "dot", "size": 20.0, "title": "Startup: FRAAZO<br>Degree: 4", "node_type": "Startup"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "9Unicorns", "label": "9Unicorns", "shape": "dot", "size": 29.435595774162696, "title": "Investor: 9Unicorns<br>Degree: 19", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Debanshu Sinha", "label": "Debanshu Sinha", "shape": "dot", "size": 16.0, "title": "Founder: Debanshu Sinha<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Matrix Partners India", "label": "Matrix Partners India", "shape": "dot", "size": 26.42220510185596, "title": "Investor: Matrix Partners India<br>Degree: 13", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Deepak Bhuvenshwari Uniyal", "label": "Deepak Bhuvenshwari Uniyal", "shape": "dot", "size": 16.0, "title": "Founder: Deepak Bhuvenshwari Uniyal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Umang Jain", "label": "Umang Jain", "shape": "dot", "size": 16.0, "title": "Founder: Umang Jain<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sutanshu Raj", "label": "Sutanshu Raj", "shape": "dot", "size": 16.0, "title": "Founder: Sutanshu Raj<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Varun Khurana", "label": "Varun Khurana", "shape": "dot", "size": 16.0, "title": "Founder: Varun Khurana<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kiran Naik", "label": "Kiran Naik", "shape": "dot", "size": 16.0, "title": "Founder: Kiran Naik<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Rahul Raj", "label": "Rahul Raj", "shape": "dot", "size": 16.0, "title": "Founder: Rahul Raj<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Anurag Malempati", "label": "Anurag Malempati", "shape": "dot", "size": 16.0, "title": "Founder: Anurag Malempati<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Chiratae Ventures", "label": "Chiratae Ventures", "shape": "dot", "size": 25.856406460551018, "title": "Investor: Chiratae Ventures<br>Degree: 12", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sandeep Jethwani", "label": "Sandeep Jethwani", "shape": "dot", "size": 16.0, "title": "Founder: Sandeep Jethwani<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Yash Desai", "label": "Yash Desai", "shape": "dot", "size": 16.0, "title": "Founder: Yash Desai<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Dilsher Singh Malhi", "label": "Dilsher Singh Malhi", "shape": "dot", "size": 16.0, "title": "Founder: Dilsher Singh Malhi<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Rahul Kumar", "label": "Rahul Kumar", "shape": "dot", "size": 18.928203230275507, "title": "Founder: Rahul Kumar<br>Degree: 3", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "TradeCred", "label": "TradeCred", "shape": "dot", "size": 18.928203230275507, "title": "Investor: TradeCred<br>Degree: 3", "node_type": "Investor"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Stellaris Venture Partners", "label": "Stellaris Venture Partners", "shape": "dot", "size": 24.64911064067352, "title": "Investor: Stellaris Venture Partners<br>Degree: 10", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ramkumar Subramaniam", "label": "Ramkumar Subramaniam", "shape": "dot", "size": 16.0, "title": "Founder: Ramkumar Subramaniam<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Chirag", "label": "Chirag", "shape": "dot", "size": 16.0, "title": "Founder: Chirag<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Geetansh Bamania", "label": "Geetansh Bamania", "shape": "dot", "size": 16.0, "title": "Founder: Geetansh Bamania<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Archit Aggarwal", "label": "Archit Aggarwal", "shape": "dot", "size": 16.0, "title": "Founder: Archit Aggarwal<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Sixth Sense Ventures", "label": "Sixth Sense Ventures", "shape": "dot", "size": 25.2664991614216, "title": "Investor: Sixth Sense Ventures<br>Degree: 11", "node_type": "Investor"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Sequoia Capital", "label": "Sequoia Capital", "shape": "dot", "size": 24.0, "title": "Investor: Sequoia Capital<br>Degree: 9", "node_type": "Investor"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Bessemer Venture Partners", "label": "Bessemer Venture Partners", "shape": "dot", "size": 20.94427190999916, "title": "Investor: Bessemer Venture Partners<br>Degree: 5", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Arpit Jain", "label": "Arpit Jain", "shape": "dot", "size": 16.0, "title": "Founder: Arpit Jain<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vikram Chopra", "label": "Vikram Chopra", "shape": "dot", "size": 16.0, "title": "Founder: Vikram Chopra<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Anshul Bhagi", "label": "Anshul Bhagi", "shape": "dot", "size": 16.0, "title": "Founder: Anshul Bhagi<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Y Combinator", "label": "Y Combinator", "shape": "dot", "size": 28.492422502470642, "title": "Investor: Y Combinator<br>Degree: 17", "node_type": "Investor"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Titan Capital", "label": "Titan Capital", "shape": "dot", "size": 32.0, "title": "Investor: Titan Capital<br>Degree: 25", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Mayank Jain", "label": "Mayank Jain", "shape": "dot", "size": 16.0, "title": "Founder: Mayank Jain<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Better Capital", "label": "Better Capital", "shape": "dot", "size": 28.0, "title": "Investor: Better Capital<br>Degree: 16", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sandeep Deshmukh", "label": "Sandeep Deshmukh", "shape": "dot", "size": 16.0, "title": "Founder: Sandeep Deshmukh<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Madhusudan Sharma", "label": "Madhusudan Sharma", "shape": "dot", "size": 16.0, "title": "Founder: Madhusudan Sharma<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Dilsher Singh", "label": "Dilsher Singh", "shape": "dot", "size": 16.0, "title": "Founder: Dilsher Singh<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ashni Sheth", "label": "Ashni Sheth", "shape": "dot", "size": 16.0, "title": "Founder: Ashni Sheth<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Jeevan Prakash", "label": "Jeevan Prakash", "shape": "dot", "size": 16.0, "title": "Founder: Jeevan Prakash<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Abhinav Asthana", "label": "Abhinav Asthana", "shape": "dot", "size": 16.0, "title": "Founder: Abhinav Asthana<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Videt Jaiswal", "label": "Videt Jaiswal", "shape": "dot", "size": 16.0, "title": "Founder: Videt Jaiswal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sourav Lashkari", "label": "Sourav Lashkari", "shape": "dot", "size": 16.0, "title": "Founder: Sourav Lashkari<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Temasek", "label": "Temasek", "shape": "dot", "size": 20.0, "title": "Investor: Temasek<br>Degree: 4", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sneh Vaswani", "label": "Sneh Vaswani", "shape": "dot", "size": 16.0, "title": "Founder: Sneh Vaswani<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Tapasi Mittal", "label": "Tapasi Mittal", "shape": "dot", "size": 16.0, "title": "Founder: Tapasi Mittal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vaibhav Chawla", "label": "Vaibhav Chawla", "shape": "dot", "size": 16.0, "title": "Founder: Vaibhav Chawla<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kushal Karwa", "label": "Kushal Karwa", "shape": "dot", "size": 16.0, "title": "Founder: Kushal Karwa<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Guru Venkatesan", "label": "Guru Venkatesan", "shape": "dot", "size": 16.0, "title": "Founder: Guru Venkatesan<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Klub", "label": "Klub", "shape": "dot", "size": 23.31370849898476, "title": "Investor: Klub<br>Degree: 8", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Priyank Shah", "label": "Priyank Shah", "shape": "dot", "size": 16.0, "title": "Founder: Priyank Shah<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Shitiz Bansal", "label": "Shitiz Bansal", "shape": "dot", "size": 16.0, "title": "Founder: Shitiz Bansal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vikul Goyal", "label": "Vikul Goyal", "shape": "dot", "size": 16.0, "title": "Founder: Vikul Goyal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sahil Contractor", "label": "Sahil Contractor", "shape": "dot", "size": 16.0, "title": "Founder: Sahil Contractor<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Neeraj Bansal", "label": "Neeraj Bansal", "shape": "dot", "size": 16.0, "title": "Founder: Neeraj Bansal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Joy Deep Nath", "label": "Joy Deep Nath", "shape": "dot", "size": 16.0, "title": "Founder: Joy Deep Nath<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Anshuman Pandey", "label": "Anshuman Pandey", "shape": "dot", "size": 16.0, "title": "Founder: Anshuman Pandey<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Shyam Kalita", "label": "Shyam Kalita", "shape": "dot", "size": 16.0, "title": "Founder: Shyam Kalita<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Balakrishna B", "label": "Balakrishna B", "shape": "dot", "size": 16.0, "title": "Founder: Balakrishna B<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sneh R Vaswani", "label": "Sneh R Vaswani", "shape": "dot", "size": 16.0, "title": "Founder: Sneh R Vaswani<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Raghuraj Sunder Raju", "label": "Raghuraj Sunder Raju", "shape": "dot", "size": 16.0, "title": "Founder: Raghuraj Sunder Raju<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Prayas Mittal", "label": "Prayas Mittal", "shape": "dot", "size": 16.0, "title": "Founder: Prayas Mittal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Reeju Datta", "label": "Reeju Datta", "shape": "dot", "size": 16.0, "title": "Founder: Reeju Datta<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Venture Catalysts", "label": "Venture Catalysts", "shape": "dot", "size": 32.39607805437114, "title": "Investor: Venture Catalysts<br>Degree: 26", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Madhusudanan R", "label": "Madhusudanan R", "shape": "dot", "size": 17.65685424949238, "title": "Founder: Madhusudanan R<br>Degree: 2", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Mehul Mittal", "label": "Mehul Mittal", "shape": "dot", "size": 16.0, "title": "Founder: Mehul Mittal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Lavelesh Sharma", "label": "Lavelesh Sharma", "shape": "dot", "size": 16.0, "title": "Founder: Lavelesh Sharma<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Peyush Bansal", "label": "Peyush Bansal", "shape": "dot", "size": 16.0, "title": "Founder: Peyush Bansal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Chintan Raikar", "label": "Chintan Raikar", "shape": "dot", "size": 16.0, "title": "Founder: Chintan Raikar<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "DST Global", "label": "DST Global", "shape": "dot", "size": 21.79795897113271, "title": "Investor: DST Global<br>Degree: 6", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vivek Bajpai", "label": "Vivek Bajpai", "shape": "dot", "size": 16.0, "title": "Founder: Vivek Bajpai<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Siddhant Saurabh", "label": "Siddhant Saurabh", "shape": "dot", "size": 16.0, "title": "Founder: Siddhant Saurabh<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Accel", "label": "Accel", "shape": "dot", "size": 24.64911064067352, "title": "Investor: Accel<br>Degree: 10", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Shobhit Jain", "label": "Shobhit Jain", "shape": "dot", "size": 16.0, "title": "Founder: Shobhit Jain<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Jinaraj PG", "label": "Jinaraj PG", "shape": "dot", "size": 16.0, "title": "Founder: Jinaraj PG<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Trifecta Capital", "label": "Trifecta Capital", "shape": "dot", "size": 16.0, "title": "Investor: Trifecta Capital<br>Degree: 1", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Anand Parameswaran", "label": "Anand Parameswaran", "shape": "dot", "size": 16.0, "title": "Founder: Anand Parameswaran<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Praveen Kumar", "label": "Praveen Kumar", "shape": "dot", "size": 16.0, "title": "Founder: Praveen Kumar<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ranjit Bhatia", "label": "Ranjit Bhatia", "shape": "dot", "size": 16.0, "title": "Founder: Ranjit Bhatia<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Chirag Taneja", "label": "Chirag Taneja", "shape": "dot", "size": 16.0, "title": "Founder: Chirag Taneja<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Elevation Capital", "label": "Elevation Capital", "shape": "dot", "size": 28.492422502470642, "title": "Investor: Elevation Capital<br>Degree: 17", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Taran Chhabra", "label": "Taran Chhabra", "shape": "dot", "size": 16.0, "title": "Founder: Taran Chhabra<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Atul Kumar", "label": "Atul Kumar", "shape": "dot", "size": 17.65685424949238, "title": "Founder: Atul Kumar<br>Degree: 2", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "WestBridge Capital", "label": "WestBridge Capital", "shape": "dot", "size": 20.0, "title": "Investor: WestBridge Capital<br>Degree: 4", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vikas Choudhary", "label": "Vikas Choudhary", "shape": "dot", "size": 16.0, "title": "Founder: Vikas Choudhary<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Akhil", "label": "Akhil", "shape": "dot", "size": 16.0, "title": "Founder: Akhil<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ankush Talwar", "label": "Ankush Talwar", "shape": "dot", "size": 16.0, "title": "Founder: Ankush Talwar<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Varun Sheth", "label": "Varun Sheth", "shape": "dot", "size": 16.0, "title": "Founder: Varun Sheth<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Mohsin M", "label": "Mohsin M", "shape": "dot", "size": 16.0, "title": "Founder: Mohsin M<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Inflection Point Ventures", "label": "Inflection Point Ventures", "shape": "dot", "size": 32.78460969082653, "title": "Investor: Inflection Point Ventures<br>Degree: 27", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vaibhav Raj Gupta", "label": "Vaibhav Raj Gupta", "shape": "dot", "size": 16.0, "title": "Founder: Vaibhav Raj Gupta<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Aashish Krishnatre", "label": "Aashish Krishnatre", "shape": "dot", "size": 17.65685424949238, "title": "Founder: Aashish Krishnatre<br>Degree: 2", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sandeep Gudibanda", "label": "Sandeep Gudibanda", "shape": "dot", "size": 16.0, "title": "Founder: Sandeep Gudibanda<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Rakesh Yadav", "label": "Rakesh Yadav", "shape": "dot", "size": 16.0, "title": "Founder: Rakesh Yadav<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Aashka Goradia Goble", "label": "Aashka Goradia Goble", "shape": "dot", "size": 16.0, "title": "Founder: Aashka Goradia Goble<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ashutosh Valani", "label": "Ashutosh Valani", "shape": "dot", "size": 16.0, "title": "Founder: Ashutosh Valani<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kunal Joshi", "label": "Kunal Joshi", "shape": "dot", "size": 16.0, "title": "Founder: Kunal Joshi<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Divij Bajaj", "label": "Divij Bajaj", "shape": "dot", "size": 16.0, "title": "Founder: Divij Bajaj<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Gnanesh Chilukuri", "label": "Gnanesh Chilukuri", "shape": "dot", "size": 16.0, "title": "Founder: Gnanesh Chilukuri<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Pranav Goel", "label": "Pranav Goel", "shape": "dot", "size": 16.0, "title": "Founder: Pranav Goel<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kartikey Hariyani", "label": "Kartikey Hariyani", "shape": "dot", "size": 16.0, "title": "Founder: Kartikey Hariyani<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Chintan S Raikar", "label": "Chintan S Raikar", "shape": "dot", "size": 16.0, "title": "Founder: Chintan S Raikar<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Rahul Gagerna", "label": "Rahul Gagerna", "shape": "dot", "size": 16.0, "title": "Founder: Rahul Gagerna<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Sequoia Capital India", "label": "Sequoia Capital India", "shape": "dot", "size": 28.0, "title": "Investor: Sequoia Capital India<br>Degree: 16", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Pushpender Singh Rautela", "label": "Pushpender Singh Rautela", "shape": "dot", "size": 16.0, "title": "Founder: Pushpender Singh Rautela<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Aditya Naik", "label": "Aditya Naik", "shape": "dot", "size": 16.0, "title": "Founder: Aditya Naik<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sharmin Ali", "label": "Sharmin Ali", "shape": "dot", "size": 16.0, "title": "Founder: Sharmin Ali<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Nimesh Kampani", "label": "Nimesh Kampani", "shape": "dot", "size": 16.0, "title": "Founder: Nimesh Kampani<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Prashant Iyengar", "label": "Prashant Iyengar", "shape": "dot", "size": 16.0, "title": "Founder: Prashant Iyengar<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Utpal Isser", "label": "Utpal Isser", "shape": "dot", "size": 16.0, "title": "Founder: Utpal Isser<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Prashant V Iyengar", "label": "Prashant V Iyengar", "shape": "dot", "size": 16.0, "title": "Founder: Prashant V Iyengar<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "LetsVenture", "label": "LetsVenture", "shape": "dot", "size": 26.42220510185596, "title": "Investor: LetsVenture<br>Degree: 13", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kamesh Elangovan", "label": "Kamesh Elangovan", "shape": "dot", "size": 16.0, "title": "Founder: Kamesh Elangovan<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Mehul Agrawal", "label": "Mehul Agrawal", "shape": "dot", "size": 16.0, "title": "Founder: Mehul Agrawal<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kunal Shah", "label": "Kunal Shah", "shape": "dot", "size": 29.435595774162696, "title": "Founder: Kunal Shah<br>Degree: 19", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Uttam Digga", "label": "Uttam Digga", "shape": "dot", "size": 16.0, "title": "Founder: Uttam Digga<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ankit Sobti", "label": "Ankit Sobti", "shape": "dot", "size": 16.0, "title": "Founder: Ankit Sobti<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Saurabh Nigam", "label": "Saurabh Nigam", "shape": "dot", "size": 16.0, "title": "Founder: Saurabh Nigam<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Rohan Pooniwala", "label": "Rohan Pooniwala", "shape": "dot", "size": 16.0, "title": "Founder: Rohan Pooniwala<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Fareesh Vijayarangam", "label": "Fareesh Vijayarangam", "shape": "dot", "size": 16.0, "title": "Founder: Fareesh Vijayarangam<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Kishor Kumar Jha", "label": "Kishor Kumar Jha", "shape": "dot", "size": 16.0, "title": "Founder: Kishor Kumar Jha<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ramaswamy Iyer", "label": "Ramaswamy Iyer", "shape": "dot", "size": 16.0, "title": "Founder: Ramaswamy Iyer<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Falcon Edge", "label": "Falcon Edge", "shape": "dot", "size": 21.79795897113271, "title": "Investor: Falcon Edge<br>Degree: 6", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Shubham Gupta", "label": "Shubham Gupta", "shape": "dot", "size": 17.65685424949238, "title": "Founder: Shubham Gupta<br>Degree: 2", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Devyesh Tandon", "label": "Devyesh Tandon", "shape": "dot", "size": 16.0, "title": "Founder: Devyesh Tandon<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Vipul Garg", "label": "Vipul Garg", "shape": "dot", "size": 16.0, "title": "Founder: Vipul Garg<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Harry Sehrawat", "label": "Harry Sehrawat", "shape": "dot", "size": 16.0, "title": "Founder: Harry Sehrawat<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Ankit Acharya", "label": "Ankit Acharya", "shape": "dot", "size": 16.0, "title": "Founder: Ankit Acharya<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Aquibur Rahman", "label": "Aquibur Rahman", "shape": "dot", "size": 16.0, "title": "Founder: Aquibur Rahman<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Mahima Kaul", "label": "Mahima Kaul", "shape": "dot", "size": 16.0, "title": "Founder: Mahima Kaul<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Mohsin", "label": "Mohsin", "shape": "dot", "size": 16.0, "title": "Founder: Mohsin<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Divya Balakrishnan", "label": "Divya Balakrishnan", "shape": "dot", "size": 16.0, "title": "Founder: Divya Balakrishnan<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Viral Chhajer", "label": "Viral Chhajer", "shape": "dot", "size": 16.0, "title": "Founder: Viral Chhajer<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Kalaari Capital", "label": "Kalaari Capital", "shape": "dot", "size": 24.64911064067352, "title": "Investor: Kalaari Capital<br>Degree: 10", "node_type": "Investor"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "BEENEXT", "label": "BEENEXT", "shape": "dot", "size": 24.0, "title": "Investor: BEENEXT<br>Degree: 9", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Amit Tiwari", "label": "Amit Tiwari", "shape": "dot", "size": 16.0, "title": "Founder: Amit Tiwari<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Makesh Kumar", "label": "Makesh Kumar", "shape": "dot", "size": 16.0, "title": "Founder: Makesh Kumar<br>Degree: 1", "node_type": "Founder"}, {"color": "#9467bd", "font": {"color": "white"}, "id": "Nexus Venture Partners", "label": "Nexus Venture Partners", "shape": "dot", "size": 24.0, "title": "Investor: Nexus Venture Partners<br>Degree: 9", "node_type": "Investor"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Suresh Singh", "label": "Suresh Singh", "shape": "dot", "size": 16.0, "title": "Founder: Suresh Singh<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Prabhu R", "label": "Prabhu R", "shape": "dot", "size": 16.0, "title": "Founder: Prabhu R<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Aravind Reddy", "label": "Aravind Reddy", "shape": "dot", "size": 16.0, "title": "Founder: Aravind Reddy<br>Degree: 1", "node_type": "Founder"}, {"color": "#1f77b4", "font": {"color": "white"}, "id": "Mentza", "label": "Mentza", "shape": "dot", "size": 21.79795897113271, "title": "Startup: Mentza<br>Degree: 6", "node_type": "Startup"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Pranav Marwah", "label": "Pranav Marwah", "shape": "dot", "size": 16.0, "title": "Founder: Pranav Marwah<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Sameer Mishra", "label": "Sameer Mishra", "shape": "dot", "size": 16.0, "title": "Founder: Sameer Mishra<br>Degree: 1", "node_type": "Founder"}, {"color": "#ff7f0e", "font": {"color": "white"}, "id": "Rohit Pande", "label": "Rohit Pande", "shape": "dot", "size": 16.0, "title": "Founder: Rohit Pande<br>Degree: 1", "node_type": "Founder"}];
+        var rawEdges = [{"color": "#555555", "from": "Tiger Global", "to": "Porter", "width": 1.2}, {"color": "#555555", "from": "Tiger Global", "to": "GoMechanic", "width": 1.2}, {"color": "#555555", "from": "SimpliContract", "to": "Guru Venkatesan", "width": 1.2}, {"color": "#555555", "from": "SimpliContract", "to": "Jinaraj PG", "width": 1.2}, {"color": "#555555", "from": "SimpliContract", "to": "Makesh Kumar", "width": 1.2}, {"color": "#555555", "from": "SimpliContract", "to": "Kalaari Capital", "width": 1.2}, {"color": "#555555", "from": "OneCode", "to": "Manish Shara", "width": 1.2}, {"color": "#555555", "from": "OneCode", "to": "Yash Desai", "width": 1.2}, {"color": "#555555", "from": "OneCode", "to": "Nexus Venture Partners", "width": 1.2}, {"color": "#555555", "from": "Remedico", "to": "Ranjit Bhatia", "width": 1.2}, {"color": "#555555", "from": "Remedico", "to": "Venture Catalysts", "width": 1.2}, {"color": "#555555", "from": "Questt", "to": "Akhil", "width": 1.2}, {"color": "#555555", "from": "Questt", "to": "Mohsin M", "width": 1.2}, {"color": "#555555", "from": "Questt", "to": "Rohit Pande", "width": 1.2}, {"color": "#555555", "from": "Questt", "to": "Akhil Singh", "width": 1.2}, {"color": "#555555", "from": "Questt", "to": "Mohsin", "width": 1.2}, {"color": "#555555", "from": "Questt", "to": "Chiratae Ventures", "width": 1.2}, {"color": "#555555", "from": "Otipy", "to": "Varun Khurana", "width": 1.2}, {"color": "#555555", "from": "Otipy", "to": "Omidyar Network India", "width": 1.2}, {"color": "#555555", "from": "Insurance Samadhan", "to": "Deepak Bhuvenshwari Uniyal", "width": 1.2}, {"color": "#555555", "from": "Insurance Samadhan", "to": "9Unicorns", "width": 1.2}, {"color": "#555555", "from": "Anurag Vaish", "to": "Mentza", "width": 1.2}, {"color": "#555555", "from": "Smartstaff", "to": "Arpit Dave", "width": 1.2}, {"color": "#555555", "from": "Smartstaff", "to": "Viral Chhajer", "width": 1.2}, {"color": "#555555", "from": "Smartstaff", "to": "Gnanesh Chilukuri", "width": 1.2}, {"color": "#555555", "from": "Smartstaff", "to": "Aravind Reddy", "width": 1.2}, {"color": "#555555", "from": "Smartstaff", "to": "Nexus Venture Partners", "width": 1.2}, {"color": "#555555", "from": "Jasmeet Thind", "to": "Coutloot", "width": 1.2}, {"color": "#555555", "from": "Praneeth Kumar", "to": "Vegrow", "width": 1.2}, {"color": "#555555", "from": "Rahul Arora", "to": "Intervue", "width": 1.2}, {"color": "#555555", "from": "ConnectedH", "to": "Shubham Gupta", "width": 1.2}, {"color": "#555555", "from": "ConnectedH", "to": "Rahul Kumar", "width": 1.2}, {"color": "#555555", "from": "ConnectedH", "to": "Suresh Singh", "width": 1.2}, {"color": "#555555", "from": "ConnectedH", "to": "Kalaari Capital", "width": 1.2}, {"color": "#555555", "from": "Leap India", "to": "Anurag Malempati", "width": 1.2}, {"color": "#555555", "from": "Leap India", "to": "CDC Group", "width": 1.2}, {"color": "#555555", "from": "Lenskart", "to": "Peyush Bansal", "width": 1.2}, {"color": "#555555", "from": "Lenskart", "to": "Temasek", "width": 1.2}, {"color": "#555555", "from": "Lenskart", "to": "Falcon Edge", "width": 1.2}, {"color": "#555555", "from": "Lenskart", "to": "Amit Chaudhary", "width": 1.2}, {"color": "#555555", "from": "Boutique Spirit Brands", "to": "Rahul Gagerna", "width": 1.2}, {"color": "#555555", "from": "Boutique Spirit Brands", "to": "TradeCred", "width": 1.2}, {"color": "#555555", "from": "Power Gummies", "to": "Divij Bajaj", "width": 1.2}, {"color": "#555555", "from": "Power Gummies", "to": "Venture Catalysts", "width": 1.2}, {"color": "#555555", "from": "Adarsh Anand", "to": "Shadez", "width": 1.2}, {"color": "#555555", "from": "Akash Sinha", "to": "Cashfree", "width": 1.2}, {"color": "#555555", "from": "Porter", "to": "Pranav Goel", "width": 1.2}, {"color": "#555555", "from": "Porter", "to": "Uttam Digga", "width": 1.2}, {"color": "#555555", "from": "Porter", "to": "Vikas Choudhary", "width": 1.2}, {"color": "#555555", "from": "YAP", "to": "Madhusudanan R", "width": 1.2}, {"color": "#555555", "from": "YAP", "to": "Prabhu R", "width": 1.2}, {"color": "#555555", "from": "YAP", "to": "Better Capital", "width": 1.2}, {"color": "#555555", "from": "Cashfree", "to": "Reeju Datta", "width": 1.2}, {"color": "#555555", "from": "Cashfree", "to": "Y Combinator", "width": 1.2}, {"color": "#555555", "from": "Postman", "to": "Abhinav Asthana", "width": 1.2}, {"color": "#555555", "from": "Postman", "to": "Abhijit Kane", "width": 1.2}, {"color": "#555555", "from": "Postman", "to": "Ankit Sobti", "width": 1.2}, {"color": "#555555", "from": "Postman", "to": "Nexus Venture Partners", "width": 1.2}, {"color": "#555555", "from": "Camp K12", "to": "Anshul Bhagi", "width": 1.2}, {"color": "#555555", "from": "Camp K12", "to": "Matrix Partners India", "width": 1.2}, {"color": "#555555", "from": "Camp K12", "to": "Elevation Capital", "width": 1.2}, {"color": "#555555", "from": "Trica", "to": "Nimesh Kampani", "width": 1.2}, {"color": "#555555", "from": "Trica", "to": "LetsVenture", "width": 1.2}, {"color": "#555555", "from": "SarvaGram", "to": "Utpal Isser", "width": 1.2}, {"color": "#555555", "from": "SarvaGram", "to": "Sameer Mishra", "width": 1.2}, {"color": "#555555", "from": "SarvaGram", "to": "Elevation Capital", "width": 1.2}, {"color": "#555555", "from": "GuardianLink", "to": "Ramkumar Subramaniam", "width": 1.2}, {"color": "#555555", "from": "GuardianLink", "to": "Kamesh Elangovan", "width": 1.2}, {"color": "#555555", "from": "GuardianLink", "to": "Kalaari Capital", "width": 1.2}, {"color": "#555555", "from": "Wherehouse.io", "to": "Vaibhav Chawla", "width": 1.2}, {"color": "#555555", "from": "Wherehouse.io", "to": "Jeevan Prakash", "width": 1.2}, {"color": "#555555", "from": "Wherehouse.io", "to": "Lavelesh Sharma", "width": 1.2}, {"color": "#555555", "from": "Wherehouse.io", "to": "Better Capital", "width": 1.2}, {"color": "#555555", "from": "GoKwik", "to": "Chirag", "width": 1.2}, {"color": "#555555", "from": "GoKwik", "to": "Vivek Bajpai", "width": 1.2}, {"color": "#555555", "from": "GoKwik", "to": "Ankush Talwar", "width": 1.2}, {"color": "#555555", "from": "GoKwik", "to": "Sequoia Capital India", "width": 1.2}, {"color": "#555555", "from": "GoKwik", "to": "Chirag Taneja", "width": 1.2}, {"color": "#555555", "from": "GoKwik", "to": "Matrix Partners India", "width": 1.2}, {"color": "#555555", "from": "Zupee", "to": "Dilsher Singh", "width": 1.2}, {"color": "#555555", "from": "Zupee", "to": "Siddhant Saurabh", "width": 1.2}, {"color": "#555555", "from": "Zupee", "to": "Dilsher Singh Malhi", "width": 1.2}, {"color": "#555555", "from": "Zupee", "to": "Matrix Partners India", "width": 1.2}, {"color": "#555555", "from": "CARS24", "to": "Mehul Agrawal", "width": 1.2}, {"color": "#555555", "from": "CARS24", "to": "Vikram Chopra", "width": 1.2}, {"color": "#555555", "from": "CARS24", "to": "DST Global", "width": 1.2}, {"color": "#555555", "from": "CARS24", "to": "Falcon Edge", "width": 1.2}, {"color": "#555555", "from": "Rentomojo", "to": "Geetansh Bamania", "width": 1.2}, {"color": "#555555", "from": "Rentomojo", "to": "Accel", "width": 1.2}, {"color": "#555555", "from": "Sanfe", "to": "Archit Aggarwal", "width": 1.2}, {"color": "#555555", "from": "Sanfe", "to": "Harry Sehrawat", "width": 1.2}, {"color": "#555555", "from": "Sanfe", "to": "LetsVenture", "width": 1.2}, {"color": "#555555", "from": "RENEE Cosmetics", "to": "Priyank Shah", "width": 1.2}, {"color": "#555555", "from": "RENEE Cosmetics", "to": "Ashutosh Valani", "width": 1.2}, {"color": "#555555", "from": "RENEE Cosmetics", "to": "Aashka Goradia Goble", "width": 1.2}, {"color": "#555555", "from": "RENEE Cosmetics", "to": "9Unicorns", "width": 1.2}, {"color": "#555555", "from": "Coutloot", "to": "Mahima Kaul", "width": 1.2}, {"color": "#555555", "from": "Coutloot", "to": "9Unicorns", "width": 1.2}, {"color": "#555555", "from": "ElasticRun", "to": "Sandeep Deshmukh", "width": 1.2}, {"color": "#555555", "from": "ElasticRun", "to": "Saurabh Nigam", "width": 1.2}, {"color": "#555555", "from": "ElasticRun", "to": "Shitiz Bansal", "width": 1.2}, {"color": "#555555", "from": "ElasticRun", "to": "Kalaari Capital", "width": 1.2}, {"color": "#555555", "from": "Neeman", "to": "Taran Chhabra", "width": 1.2}, {"color": "#555555", "from": "Neeman", "to": "Sixth Sense Ventures", "width": 1.2}, {"color": "#555555", "from": "Shadez", "to": "Amit Tiwari", "width": 1.2}, {"color": "#555555", "from": "Shadez", "to": "Inflection Point Ventures", "width": 1.2}, {"color": "#555555", "from": "Instoried", "to": "Sharmin Ali", "width": 1.2}, {"color": "#555555", "from": "Instoried", "to": "9Unicorns", "width": 1.2}, {"color": "#555555", "from": "Instoried", "to": "Sutanshu Raj", "width": 1.2}, {"color": "#555555", "from": "CHARGE+ZONE", "to": "Kartikey Hariyani", "width": 1.2}, {"color": "#555555", "from": "CHARGE+ZONE", "to": "Venture Catalysts", "width": 1.2}, {"color": "#555555", "from": "Kevin William David", "to": "CreatorStack", "width": 1.2}, {"color": "#555555", "from": "Fieldproxy", "to": "Swaroop Vijayakumar", "width": 1.2}, {"color": "#555555", "from": "Fieldproxy", "to": "Balakrishna B", "width": 1.2}, {"color": "#555555", "from": "Fieldproxy", "to": "LetsVenture", "width": 1.2}, {"color": "#555555", "from": "Vaibhav Porwal", "to": "Dezerv.", "width": 1.2}, {"color": "#555555", "from": "Bimaplan", "to": "Vikul Goyal", "width": 1.2}, {"color": "#555555", "from": "Bimaplan", "to": "Titan Capital", "width": 1.2}, {"color": "#555555", "from": "Bimaplan", "to": "Y Combinator", "width": 1.2}, {"color": "#555555", "from": "NimbleBox.ai", "to": "Anshuman Pandey", "width": 1.2}, {"color": "#555555", "from": "NimbleBox.ai", "to": "Rohan Pooniwala", "width": 1.2}, {"color": "#555555", "from": "NimbleBox.ai", "to": "Venture Catalysts", "width": 1.2}, {"color": "#555555", "from": "Srinivasan Narayan", "to": "Goodmeetings", "width": 1.2}, {"color": "#555555", "from": "Vegrow", "to": "Shobhit Jain", "width": 1.2}, {"color": "#555555", "from": "Vegrow", "to": "Mrudhukar Batchu", "width": 1.2}, {"color": "#555555", "from": "Vegrow", "to": "Kiran Naik", "width": 1.2}, {"color": "#555555", "from": "Vegrow", "to": "Elevation Capital", "width": 1.2}, {"color": "#555555", "from": "Elevar", "to": "Kunal Joshi", "width": 1.2}, {"color": "#555555", "from": "Elevar", "to": "Pranav Marwah", "width": 1.2}, {"color": "#555555", "from": "Elevar", "to": "Kalaari Capital", "width": 1.2}, {"color": "#555555", "from": "Ergos", "to": "Kishor Kumar Jha", "width": 1.2}, {"color": "#555555", "from": "Ergos", "to": "Praveen Kumar", "width": 1.2}, {"color": "#555555", "from": "Ergos", "to": "CDC Group", "width": 1.2}, {"color": "#555555", "from": "Goodmeetings", "to": "Chiratae Ventures", "width": 1.2}, {"color": "#555555", "from": "Dezerv.", "to": "Sandeep Jethwani", "width": 1.2}, {"color": "#555555", "from": "Dezerv.", "to": "Sahil Contractor", "width": 1.2}, {"color": "#555555", "from": "Dezerv.", "to": "Elevation Capital", "width": 1.2}, {"color": "#555555", "from": "Dezerv.", "to": "Matrix Partners India", "width": 1.2}, {"color": "#555555", "from": "Mailmodo", "to": "Aquibur Rahman", "width": 1.2}, {"color": "#555555", "from": "Mailmodo", "to": "Apurv Gupta", "width": 1.2}, {"color": "#555555", "from": "Mailmodo", "to": "Devyesh Tandon", "width": 1.2}, {"color": "#555555", "from": "Mailmodo", "to": "Y Combinator", "width": 1.2}, {"color": "#555555", "from": "Homeville", "to": "Madhusudan Sharma", "width": 1.2}, {"color": "#555555", "from": "Homeville", "to": "9Unicorns", "width": 1.2}, {"color": "#555555", "from": "CredRight", "to": "Neeraj Bansal", "width": 1.2}, {"color": "#555555", "from": "CredRight", "to": "9Unicorns", "width": 1.2}, {"color": "#555555", "from": "CredRight", "to": "Venture Catalysts", "width": 1.2}, {"color": "#555555", "from": "NOTO", "to": "Varun Sheth", "width": 1.2}, {"color": "#555555", "from": "NOTO", "to": "Ashni Sheth", "width": 1.2}, {"color": "#555555", "from": "NOTO", "to": "Titan Capital", "width": 1.2}, {"color": "#555555", "from": "Ishita Verma", "to": "Klub", "width": 1.2}, {"color": "#555555", "from": "SplashLearn", "to": "Arpit Jain", "width": 1.2}, {"color": "#555555", "from": "SplashLearn", "to": "Joy Deep Nath", "width": 1.2}, {"color": "#555555", "from": "SplashLearn", "to": "Mayank Jain", "width": 1.2}, {"color": "#555555", "from": "SplashLearn", "to": "Umang Jain", "width": 1.2}, {"color": "#555555", "from": "SplashLearn", "to": "Accel", "width": 1.2}, {"color": "#555555", "from": "Chirrup", "to": "Vipul Garg", "width": 1.2}, {"color": "#555555", "from": "Chirrup", "to": "Sourav Lashkari", "width": 1.2}, {"color": "#555555", "from": "Chirrup", "to": "Mehul Mittal", "width": 1.2}, {"color": "#555555", "from": "Chirrup", "to": "Titan Capital", "width": 1.2}, {"color": "#555555", "from": "GoMechanic", "to": "Kushal Karwa", "width": 1.2}, {"color": "#555555", "from": "CDC Group", "to": "Vayana Network", "width": 1.2}, {"color": "#555555", "from": "Go Swift", "to": "Shyam Kalita", "width": 1.2}, {"color": "#555555", "from": "Go Swift", "to": "Debanshu Sinha", "width": 1.2}, {"color": "#555555", "from": "Go Swift", "to": "Prayas Mittal", "width": 1.2}, {"color": "#555555", "from": "Go Swift", "to": "Kalaari Capital", "width": 1.2}, {"color": "#555555", "from": "CreatorStack", "to": "Ankit Acharya", "width": 1.2}, {"color": "#555555", "from": "CreatorStack", "to": "Accel", "width": 1.2}, {"color": "#555555", "from": "Intervue", "to": "Pushpender Singh Rautela", "width": 1.2}, {"color": "#555555", "from": "Intervue", "to": "Titan Capital", "width": 1.2}, {"color": "#555555", "from": "Intervue", "to": "Kunal Shah", "width": 1.2}, {"color": "#555555", "from": "HealthPlix", "to": "Raghuraj Sunder Raju", "width": 1.2}, {"color": "#555555", "from": "HealthPlix", "to": "Sandeep Gudibanda", "width": 1.2}, {"color": "#555555", "from": "HealthPlix", "to": "Kalaari Capital", "width": 1.2}, {"color": "#555555", "from": "Airblack", "to": "Videt Jaiswal", "width": 1.2}, {"color": "#555555", "from": "Airblack", "to": "Vaibhav Raj Gupta", "width": 1.2}, {"color": "#555555", "from": "Airblack", "to": "Elevation Capital", "width": 1.2}, {"color": "#555555", "from": "FloBiz", "to": "Rahul Raj", "width": 1.2}, {"color": "#555555", "from": "FloBiz", "to": "Aditya Naik", "width": 1.2}, {"color": "#555555", "from": "FloBiz", "to": "Rakesh Yadav", "width": 1.2}, {"color": "#555555", "from": "FloBiz", "to": "Sequoia Capital India", "width": 1.2}, {"color": "#555555", "from": "FloBiz", "to": "Elevation Capital", "width": 1.2}, {"color": "#555555", "from": "Vayana Network", "to": "Ramaswamy Iyer", "width": 1.2}, {"color": "#555555", "from": "Miko", "to": "Sneh R Vaswani", "width": 1.2}, {"color": "#555555", "from": "Miko", "to": "Prashant V Iyengar", "width": 1.2}, {"color": "#555555", "from": "Miko", "to": "Chintan S Raikar", "width": 1.2}, {"color": "#555555", "from": "Miko", "to": "Chintan Raikar", "width": 1.2}, {"color": "#555555", "from": "Miko", "to": "Prashant Iyengar", "width": 1.2}, {"color": "#555555", "from": "Miko", "to": "Sneh Vaswani", "width": 1.2}, {"color": "#555555", "from": "Miko", "to": "Chiratae Ventures", "width": 1.2}, {"color": "#555555", "from": "FRAAZO", "to": "Atul Kumar", "width": 1.2}, {"color": "#555555", "from": "FRAAZO", "to": "Aashish Krishnatre", "width": 1.2}, {"color": "#555555", "from": "FRAAZO", "to": "Sixth Sense Ventures", "width": 1.2}, {"color": "#555555", "from": "9Unicorns", "to": "Klub", "width": 1.2}, {"color": "#555555", "from": "Tapasi Mittal", "to": "Mentza", "width": 1.2}, {"color": "#555555", "from": "Klub", "to": "Trifecta Capital", "width": 1.2}, {"color": "#555555", "from": "Anand Parameswaran", "to": "Mentza", "width": 1.2}, {"color": "#555555", "from": "Inflection Point Ventures", "to": "Mentza", "width": 1.2}, {"color": "#555555", "from": "Fareesh Vijayarangam", "to": "Mentza", "width": 1.2}, {"color": "#555555", "from": "Divya Balakrishnan", "to": "Mentza", "width": 1.2}];
+
+        var nodes = new vis.DataSet(rawNodes);
+        var edges = new vis.DataSet(rawEdges);
+        var container = document.getElementById('mynetwork');
+        var data = { nodes: nodes, edges: edges };
+
+        var options = {
+            nodes: {
+                font: {
+                    color: '#f8fafc',
+                    face: 'Inter',
+                    size: 13,
+                    strokeWidth: 3,
+                    strokeColor: '#0f172a'
+                },
+                borderWidth: 2,
+                shadow: {
+                    enabled: true,
+                    color: 'rgba(0,0,0,0.5)',
+                    size: 8,
+                    x: 2,
+                    y: 2
+                }
+            },
+            edges: {
+                color: {
+                    color: '#475569',
+                    highlight: '#38bdf8',
+                    hover: '#64748b'
+                },
+                width: 1.2,
+                smooth: {
+                    type: 'continuous',
+                    roundness: 0.15
+                }
+            },
+            physics: {
+                barnesHut: {
+                    gravitationalConstant: -7000,
+                    centralGravity: 0.35,
+                    springLength: 105,
+                    springConstant: 0.04
+                },
+                minVelocity: 0.75,
+                stabilization: {
+                    enabled: true,
+                    iterations: 150
+                }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 100,
+                hideEdgesOnDrag: false,
+                navigationButtons: false
+            }
+        };
+
+        var network = new vis.Network(container, data, options);
+
+        // Stabilization Progress Bar
+        network.on("stabilizationProgress", function(params) {
+            var factor = params.iterations / params.total;
+            document.getElementById('progressFill').style.width = Math.round(factor * 100) + '%';
+            document.getElementById('progressPercent').innerText = Math.round(factor * 100) + '%';
+        });
+
+        network.once("stabilizationIterationsDone", function() {
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('progressPercent').innerText = '100%';
+            setTimeout(function() {
+                var lb = document.getElementById('loadingBar');
+                lb.style.opacity = '0';
+                setTimeout(function() { lb.style.display = 'none'; }, 500);
+            }, 200);
+        });
+
+        // --- Interactive Click & Inspector Behavior ---
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var nodeData = nodes.get(nodeId);
+                var connectedNodes = network.getConnectedNodes(nodeId);
+
+                // Update Inspector
+                document.getElementById('inspectorCard').style.display = 'block';
+                document.getElementById('inspectorTitle').innerText = nodeId;
+                var badgeEl = document.getElementById('inspectorType');
+                badgeEl.innerText = nodeData.node_type;
+                badgeEl.className = 'inspector-badge ' + 
+                    (nodeData.node_type === 'Investor' ? 'badge-investor' : 
+                     nodeData.node_type === 'Startup' ? 'badge-startup' : 'badge-founder');
+
+                document.getElementById('inspectorDegree').innerText = connectedNodes.length;
+                document.getElementById('inspectorRole').innerText = 
+                    nodeData.node_type === 'Investor' ? 'Capital Allocator / Syndicate' :
+                    nodeData.node_type === 'Startup' ? 'Venture / Portfolio Co' : 'Entrepreneur / Team';
+
+                var neighborsHtml = connectedNodes.map(function(n) {
+                    var nData = nodes.get(n);
+                    var dotColor = nData ? nData.color : '#ccc';
+                    return '<div style="margin-bottom:3px; display:flex; align-items:center; gap:6px;">' +
+                           '<span style="width:8px; height:8px; border-radius:50%; background:' + dotColor + ';"></span>' +
+                           '<span>' + n + '</span></div>';
+                }).join('');
+                document.getElementById('inspectorNeighbors').innerHTML = neighborsHtml || 'No direct connections in core slice';
+
+                // Neighborhood Highlight
+                highlightNeighborhood(nodeId, connectedNodes);
+            } else {
+                resetHighlight();
+                document.getElementById('inspectorCard').style.display = 'none';
+            }
+        });
+
+        function highlightNeighborhood(selectedNode, connectedNodes) {
+            var allNodes = nodes.get();
+            var updateArray = [];
+            var connectedSet = new Set(connectedNodes);
+            connectedSet.add(selectedNode);
+
+            allNodes.forEach(function(node) {
+                if (connectedSet.has(node.id)) {
+                    updateArray.push({ id: node.id, opacity: 1.0, font: { color: '#ffffff' } });
+                } else {
+                    updateArray.push({ id: node.id, opacity: 0.12, font: { color: 'rgba(255,255,255,0.1)' } });
+                }
+            });
+            nodes.update(updateArray);
+        }
+
+        function resetHighlight() {
+            var allNodes = nodes.get();
+            var updateArray = allNodes.map(function(node) {
+                return { id: node.id, opacity: 1.0, font: { color: '#f8fafc' } };
+            });
+            nodes.update(updateArray);
+            network.fit({ animation: { duration: 700, easingFunction: 'easeInOutQuad' } });
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.filter-btn').classList.add('active');
+        }
+
+        // --- Search Functionality ---
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            var query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                resetHighlight();
+                return;
+            }
+            var matchedNode = nodes.get().find(n => n.id.toLowerCase().includes(query));
+            if (matchedNode) {
+                network.focus(matchedNode.id, {
+                    scale: 1.3,
+                    animation: { duration: 500, easingFunction: 'easeInOutQuad' }
+                });
+                network.selectNodes([matchedNode.id]);
+                var connected = network.getConnectedNodes(matchedNode.id);
+                highlightNeighborhood(matchedNode.id, connected);
+            }
+        });
+
+        // --- Filter by Node Type ---
+        function filterNodeType(type) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            var allNodes = nodes.get();
+            var updateArray = [];
+            allNodes.forEach(function(node) {
+                if (type === 'All' || node.node_type === type) {
+                    updateArray.push({ id: node.id, hidden: false, opacity: 1.0 });
+                } else {
+                    updateArray.push({ id: node.id, hidden: true });
+                }
+            });
+            nodes.update(updateArray);
+            network.fit({ animation: { duration: 600, easingFunction: 'easeInOutQuad' } });
+        }
+    </script>
+</body>
+</html>
