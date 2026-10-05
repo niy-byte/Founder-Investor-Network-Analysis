@@ -91,6 +91,15 @@
         .badge-startup { color: #60a5fa; border-color: rgba(96, 165, 250, 0.3); background: rgba(37, 99, 235, 0.15); }
         .badge-founder { color: #fb923c; border-color: rgba(251, 146, 60, 0.3); background: rgba(234, 88, 12, 0.15); }
         .badge-total { color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); background: rgba(14, 165, 233, 0.15); }
+        .badge-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            background: currentColor;
+            box-shadow: 0 0 6px currentColor;
+        }
 
         /* Left Sidebar: Legend & Guide */
         .left-sidebar {
@@ -292,13 +301,13 @@
     <!-- Top Header Navigation -->
     <div class="header-bar glass-panel">
         <div class="header-title-box">
-            <h1>🇮🇳 Indian Startup Venture Ecosystem: Tripartite Core Network</h1>
+            <h1>Indian Startup Venture Ecosystem: Tripartite Core Network</h1>
         </div>
         <div class="badge-group">
-            <div class="metric-badge badge-investor">🟣 30 Core VCs / Investors</div>
-            <div class="metric-badge badge-startup">🔵 60 Funded Startups</div>
-            <div class="metric-badge badge-founder">🟠 131 Founding Teams</div>
-            <div class="metric-badge badge-total">🔗 200 Core Links</div>
+            <div class="metric-badge badge-investor"><span class="badge-indicator"></span>30 Core VCs / Investors</div>
+            <div class="metric-badge badge-startup"><span class="badge-indicator"></span>60 Funded Startups</div>
+            <div class="metric-badge badge-founder"><span class="badge-indicator"></span>131 Founding Teams</div>
+            <div class="metric-badge badge-total"><span class="badge-indicator"></span>200 Core Links</div>
         </div>
     </div>
 
