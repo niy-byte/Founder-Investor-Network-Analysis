@@ -1,140 +1,108 @@
-# Indian Startup Venture Analytics & Machine Learning Suite
+# Founder–Investor Network Analysis: Indian Startup Ecosystem
 
-An integrated empirical research and predictive modeling suite analyzing structural venture networks, capital allocation dynamics, and funding outcomes across the Indian startup ecosystem.
+An empirical network analysis and econometric study investigating how founders, startups, and investors are connected across the Indian venture capital ecosystem, and whether network positions directly correlate with subsequent funding outcomes.
 
-The repository comprises two interconnected projects:
-1. **Project 1 — Founder–Investor Network Analysis**: Multi-dimensional network architecture, centrality profiling, syndicate communities, inequality indices, and econometric certifications.
-2. **Project 2 — Startup Funding Prediction Model**: Supervised machine learning pipelines leveraging longitudinal startup track records, operational demographics, and transferred network centrality features to predict funding amounts and stage progression.
+Companion predictive modeling repository: [Startup-Funding-Prediction-Model](https://github.com/niy-byte/Startup-Funding-Prediction-Model).
 
 ---
 
-## Project 1: Founder–Investor Network Analysis
+## Executive Project Summary
 
-### Executive Summary
-- **Aim & Core Question**: How are founders and investors connected in the Indian startup ecosystem, and is network position associated with subsequent funding outcomes?
-- **Network Construction**: Tripartite graph ($F \to S \gets I$) comprising 4,002 entities and 3,881 ties from 1,209 verified rounds.
-- **Centrality Spectrum**: Quantified connectivity (Degree), brokerage (Betweenness), elite association (Eigenvector), and prestige (PageRank).
-- **Core Findings**: 85.3% of entities form a single giant connected component. Capital inequality is severe (Gini = 0.548; HHI indicates power-law deal concentration). Startup degree ($\beta = 0.223, p < 0.001$) and investor PageRank ($\beta = 276.69, p < 0.001$) yield statistically significant funding premiums.
-- **Artifacts**:
-  - Interactive WebGL Graph: `founder_investor_network.html`
-  - Analysis Notebook: `Network-Investor analysis.ipynb`
-  - Executive Writeup: `Project_Summary_Network_Analysis.docx`
-  - Methodological Justification: `Methodology_and_Model_Justification.docx`
+### Aim & Core Question
+This project investigates how founders and investors are connected across the Indian startup ecosystem and whether network position directly predicts subsequent funding outcomes.
 
-### Project 1 Visualizations
+### Methods & Rationale
+Using 1,209 verified deals from the Indian venture ecosystem, we constructed a tripartite network (Founder–Startup–Investor) comprising 4,002 entities and 3,881 ties. Multi-metric centralities (Degree, Betweenness, Eigenvector, and PageRank) were computed to quantify connectivity, brokerage, and prestige. We applied modularity maximization to identify co-investment syndicates and calculated Gini and Herfindahl-Hirschman Index (HHI) metrics to measure capital concentration. Finally, heteroskedasticity-robust OLS regressions evaluated the relationship between network centrality and capital raised, controlling for stage, sector, and geographic fixed effects.
 
-#### Tripartite Venture Capital Network Graph
+### Results & Ecosystem Interpretation
+1. **Structural Connectivity**: 85.3% of entities form a single connected component, with Bengaluru and Delhi-NCR anchoring over 60% of all activity.
+2. **Market Concentration**: High capital inequality exists (Gini = 0.548); the top 5% of investors (e.g., Tiger Global, Peak XV / Sequoia, Accel, Blume Ventures) dominate 24.5% of deal flow as core gatekeepers.
+3. **Funding Premium**: Startup degree ($\beta = 0.223, p < 0.001$) and investor PageRank prestige ($\beta = 276.69, p < 0.001$) significantly increase funding round size. Investor network prestige acts as a vital certification signal in Indian venture financing.
+
+---
+
+## Empirical Visualizations and Results
+
+### 1. Tripartite Venture Capital Network Graph
+Heterogeneous network mapping founders, startups, and institutional investors. Node sizes scale with degree centrality, and colors denote entity types (Purple: Investors, Cyan: Startups, Orange: Founders).
+
 ![Tripartite Network Graph](images/network_graph_visualization.png)
 
-#### Centrality Correlation Heatmap & Lorenz Curve
-| Centrality Correlation Matrix | Investor Concentration Lorenz Curve |
-| :---: | :---: |
-| ![Centrality Correlation](images/centrality_correlation_heatmap.png) | ![Lorenz Curve](images/investor_concentration_lorenz.png) |
+### 2. Centrality Correlation Matrix
+Spearman and Pearson correlation profiles across Degree, Betweenness, Eigenvector, and PageRank centralities for institutional investors in the ecosystem.
+
+![Centrality Correlation Heatmap](images/centrality_correlation_heatmap.png)
+
+### 3. Investor Market Concentration & Lorenz Curve
+Empirical distribution of deal flow and capital connectivity across the investor population, illustrating high concentration (Gini coefficient = 0.548) and power-law distribution tails.
+
+![Investor Concentration and Lorenz Curve](images/investor_concentration_lorenz.png)
+
+### 4. Geographic Hubs & Sectoral Deal Allocations
+Comparative deal distribution across primary startup hubs (Bengaluru, Delhi-NCR, Mumbai) and key verticals (FinTech, EdTech, E-commerce).
+
+![Geographic Hub and Sectoral Deal Distribution](images/geographic_sector_distribution.png)
 
 ---
 
-## Project 2: Startup Funding Prediction Model
+## Methodology & Model Justification
 
-### Executive Summary
-- **Aim & Core Question**: Can observable characteristics of an Indian startup — combined with network position features transferred from Project 1 — predict subsequent funding amounts and funding-stage outcomes?
-- **Dataset**: 3,044 financing transactions across 2,349 startups from January 2015 to January 2020 (`startup_funding.csv`).
-- **Feature Engineering & Network Transfer**:
-  - **Longitudinal Track Record**: Cumulative prior capital (`prev_funding_usd`), immediate prior round size (`prev_round_size`), completed round count (`num_prev_rounds`), financing runway gap (`days_since_prev_round`), and startup operational age (`startup_age_days`).
-  - **Operational & Demographics**: 8 consolidated industry verticals, 8 geographic hubs, and standardized funding stages.
-  - **Project 1 Network Bridge**: Mapped participating investors to their Project 1 graph centralities (Lead Investor PageRank, Degree, Betweenness, Eigenvector, and syndicate average prestige).
-  - **Founder Human Capital**: Co-founder team sizing mapped from Project 1 founder records.
-- **Artifacts**:
-  - Prediction Modeling Notebook: `Startup_Funding_Prediction.ipynb`
-  - Complete Codebook & Data Dictionary: `Project_2_Codebook_and_Data_Dictionary.docx` and `CODEBOOK_PROJECT_2.md`
-  - Executive Briefing Document: `Project_2_Summary_Prediction_Model.docx`
-  - Engineered Modeling Matrix: `project2_engineered_features.csv`
+This section outlines the methodological and econometric justification for every model, metric, and analytical tool deployed in the project.
 
----
+### 1. Tripartite Heterogeneous Network Architecture (Founder -> Startup <- Investor)
+- **How Measured**: Constructed a multi-relational graph $G = (V, E)$ with three explicit node classes (Founders, Startups, Investors) connected by 'Founded' and 'Invested' relations weighted by round capital ($USD Mn).
+- **Why Chosen & Why Not Alternatives**: Venture ecosystems are fundamentally tripartite: human capital (founders) and institutional financial capital (investors) interface through corporate vehicles (startups). Standard unipartite or simple bipartite projections collapse or discard the human founder dimension entirely.
 
-## Project 2 Benchmark Results
+### 2. Degree Centrality (Direct Deal Flow & Portfolio Volume)
+- **How Measured**: Measured as the normalized count of incident edges for each vertex: $C_D(v) = \frac{\text{deg}(v)}{|V| - 1}$, representing an investor's portfolio volume or a startup's syndicate size.
+- **Why Chosen & Why Not Alternatives**: Provides an unweighted baseline of direct market activity and deal access. Closeness centrality was avoided because startup networks contain disconnected components where geodesic distances become infinite or ill-defined.
 
-### Task A: Continuous Funding Amount Prediction ($\log(\text{Amount in USD})$)
+### 3. Betweenness Centrality (Information Brokerage & Gatekeeping)
+- **How Measured**: Calculated the fraction of all network shortest paths traversing a given node: $C_B(v) = \sum_{s \neq v \neq t} \frac{\sigma_{st}(v)}{\sigma_{st}}$.
+- **Why Chosen & Why Not Alternatives**: Identifies structural bridge investors and serial founders who bridge otherwise disconnected industry sectors and regional hubs. Unlike closeness, betweenness isolates gatekeeping power and informational leverage across fragmented sub-networks.
 
-Models evaluated on the 2,066 disclosed financing transactions using an 80/20 train/test split.
+### 4. Eigenvector Centrality (Prestige by Elite Association)
+- **How Measured**: Determined by the principal eigenvector of the adjacency matrix: $\lambda x_v = \sum_{u \in N(v)} x_u$, assigning higher scores to entities tied to already-influential entities.
+- **Why Chosen & Why Not Alternatives**: In venture capital, who backs an entity matters as much as how many back it. Simple degree counts treat an investment from an elite lead fund identically to an isolated angel; eigenvector centrality rewards prestige-by-association.
 
-| Model / Specification | Baseline $R^2$ (No Network) | Full $R^2$ (+Project 1 Network) | $\Delta R^2$ (Gain) | Test RMSE | Test MAE |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **XGBoost Regressor** | **0.643** | **0.698** | **+5.5%** | **1.084** | **0.840** |
-| Random Forest Regressor | 0.633 | 0.686 | +5.3% | 1.105 | 0.853 |
-| ElasticNet ($\alpha=0.01, l_1=0.5$) | 0.611 | 0.641 | +3.0% | 1.181 | 0.912 |
-| Lasso Regression ($\alpha=0.01$) | 0.611 | 0.641 | +3.0% | 1.181 | 0.912 |
-| Ridge Regression ($\alpha=1.0$) | 0.609 | 0.640 | +3.1% | 1.182 | 0.916 |
-| OLS Linear Regression | 0.606 | 0.639 | +3.3% | 1.184 | 0.919 |
+### 5. PageRank Algorithm (Recursive Capital Flow & Market Prestige)
+- **How Measured**: Computed stationary random-walk probability with damping factor $\alpha = 0.85$ and capital-weighted transition matrices across bilateral funding ties.
+- **Why Chosen & Why Not Alternatives**: Eigenvector centrality frequently collapses onto localized dense clusters in sparse, bipartite venture graphs. PageRank's teleportation damping prevents localized rank trapping, realistically modeling diffuse prestige across the Indian venture ecosystem.
 
-### Task B: Stage Progression / Follow-on Graduation (Binary Classification)
+### 6. Modularity Maximization (Investor Co-Investment Syndicates)
+- **How Measured**: Applied modularity optimization on the projected investor-investor graph (edge weights = shared portfolio companies) to partition funds into collaborative cliques.
+- **Why Chosen & Why Not Alternatives**: Detects natural co-investment syndicates endogenously without requiring an arbitrary pre-specified number of clusters ($k$). Distance-based clustering (e.g., k-means, GMM) requires arbitrary Euclidean embeddings that distort topological network cohesion.
 
-Models predicting whether a startup successfully secures follow-on funding rounds (evaluated on all 3,044 rounds; graduation rate = 38.96%).
+### 7. Gini Coefficient & Herfindahl-Hirschman Index (HHI) (Network Inequality)
+- **How Measured**: Gini was calculated from the empirical Lorenz curve of investor deal counts; HHI was computed as the sum of squared percentage deal shares across all active institutional funds.
+- **Why Chosen & Why Not Alternatives**: These are standard economic measures for distribution inequality and market concentration. Basic variance or standard deviation cannot quantify bounded, scale-invariant power-law skewness in venture deal allocation.
 
-| Classifier | Baseline ROC-AUC | Full ROC-AUC (+Network) | Test Accuracy | Precision | Recall | F1-Score |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Logistic Regression (L2)** | **0.889** | **0.890** | 85.1% | 95.6% | 64.6% | 0.771 |
-| **XGBoost Classifier** | 0.869 | 0.877 | **85.4%** | **95.7%** | **65.4%** | **0.777** |
-| Random Forest Classifier | 0.869 | 0.873 | 85.7% | 98.7% | 64.1% | 0.777 |
+### 8. Log-Linear OLS Regression with Robust Standard Errors (HC1)
+- **How Measured**: Estimated $\log(\text{Funding Amount}_i)$ against startup degree, investor PageRank prestige, founder team size, and sector/hub/stage fixed effects using White's heteroskedasticity-consistent variance estimator.
+- **Why Chosen & Why Not Alternatives**: The research objective is parameter inference and hypothesis testing (verifying if network position causes higher funding), not black-box prediction. OLS provides interpretable percentage elasticities; machine learning models lack formal statistical p-values. Standard OLS was adjusted because venture capital returns exhibit severe heteroskedasticity.
 
----
-
-## Project 2 Visualizations & Empirical Findings
-
-### 1. Actual vs Predicted Values and Residual Analysis (XGBoost Regressor)
-Predictions achieve $R^2 = 0.698$ with approximately normal, homoskedastic residual errors centered at zero ($\mu = 0.012$).
-
-![Actual vs Predicted Regression](images/actual_vs_predicted_regression.png)
-
-### 2. ROC Curves & Confusion Matrix (Stage Progression Classification)
-Classifiers deliver high discriminative power (AUC = 0.890) with minimal false alarms (95.7% precision).
-
-![Classification ROC and Confusion Matrix](images/classification_roc_confusion.png)
-
-### 3. Feature Importance & The Network Bridge Ablation
-Across every algorithm, incorporating Project 1 network centrality features increases predictive power by +3.0% to +5.5% $R^2$, confirming that investor prestige acts as an independent valuation driver.
-
-![Feature Importance and Ablation](images/feature_importance_ablation.png)
-
-### 4. Correlation Matrix of Startup Attributes and Network Centralities
-![Correlation Matrix](images/project2_correlation_matrix.png)
+### 9. Interactive Force-Directed Network Visualization
+- **How Measured**: Rendered dynamic graph with repulsion-gravity physics, mapping node types to distinct colors, sizing by degree, and enabling search, category filtering, and real-time node inspection.
+- **Why Chosen & Why Not Alternatives**: Static plots degenerate into unreadable hairballs when visualizing thousands of entities. The interactive visualizer enables panning, zooming, filtering, and local inspection of investment syndicates directly in the browser.
 
 ---
 
 ## Repository Structure
 
 ```text
-├── Indian_Startup.csv                          # Project 1 raw dataset (1,209 rounds)
-├── Network-Investor analysis.ipynb             # Project 1 empirical analysis notebook
-├── founder_investor_network.html               # Project 1 interactive network visualizer
-├── Project2_Summary.docx                       # Plain-language executive summary with startup examples (300 words)
-├── Methodology_and_Models_Used project 2.docx  # Plain-language methodology & model guide (Word format)
-├── Methodology_and_Models_Used project 2.odt   # Plain-language methodology & model guide (ODT format)
-├── Methodology_and_Model_Justification.docx    # Step-by-step methodology & model selection guide
-├── Project_Summary_Network_Analysis.docx       # Project 1 executive summary (<200 words)
-│
-├── startup_funding.csv                         # Project 2 raw dataset (3,044 rounds, 2015-2020)
-├── Startup_Funding_Prediction.ipynb            # Project 2 prediction notebook (executed, 26 cells)
-├── project1_investor_centralities.csv          # Project 1 to Project 2 bridge cache
-├── project2_engineered_features.csv            # Project 2 processed feature matrix
-├── CODEBOOK_PROJECT_2.md                       # Project 2 Markdown codebook & data dictionary
-├── Project_2_Codebook_and_Data_Dictionary.docx # Project 2 Word doc data dictionary
-├── Project_2_Summary_Prediction_Model.docx     # Project 2 executive briefing Word doc
-│
-├── requirements.txt                            # Unified dependencies (scikit-learn, xgboost, etc.)
-├── .gitignore                                  # Ignore rules for virtualenvs and temporary caches
-├── README.md                                   # Complete suite documentation
-└── images/                                     # High-resolution figures and benchmark plots
+├── Indian_Startup.csv                     # Raw venture funding and entity dataset (1,209 rounds)
+├── Network-Investor analysis.ipynb        # Primary analysis and modeling notebook
+├── founder_investor_network.html          # Interactive PyVis network visualization
+├── Project_Summary_Network_Analysis.docx  # Executive summary document (<200 words)
+├── Methodology_and_Model_Justification.docx # Detailed model and methodology justification
+├── requirements.txt                       # Python dependencies
+├── .gitignore                             # Git ignore rules for virtualenvs and temporary files
+├── README.md                              # Complete GitHub documentation with figures
+└── images/                                # High-resolution analytical figures and network diagrams
     ├── network_graph_visualization.png
     ├── centrality_correlation_heatmap.png
     ├── investor_concentration_lorenz.png
-    ├── geographic_sector_distribution.png
-    ├── target_distribution_comparison.png
-    ├── sector_hub_round_sizes.png
-    ├── network_centrality_vs_funding.png
-    ├── project2_correlation_matrix.png
-    ├── actual_vs_predicted_regression.png
-    ├── classification_roc_confusion.png
-    └── feature_importance_ablation.png
+    └── geographic_sector_distribution.png
 ```
 
 ---
@@ -154,21 +122,17 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Run the Notebooks
+### 3. Run the Jupyter Notebook
 ```bash
-# Project 1: Network Analysis & Regressions
 jupyter notebook "Network-Investor analysis.ipynb"
-
-# Project 2: Predictive Machine Learning Models
-jupyter notebook "Startup_Funding_Prediction.ipynb"
 ```
 
-### 4. View the Interactive Visualizer
+### 4. View the Interactive Visualization
 Open `founder_investor_network.html` in any web browser:
 ```bash
-# Linux
+# On Linux
 xdg-open founder_investor_network.html
 
-# macOS
+# On macOS
 open founder_investor_network.html
 ```
