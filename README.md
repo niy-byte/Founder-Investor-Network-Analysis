@@ -106,8 +106,11 @@ Across every algorithm, incorporating Project 1 network centrality features incr
 ├── Indian_Startup.csv                          # Project 1 raw dataset (1,209 rounds)
 ├── Network-Investor analysis.ipynb             # Project 1 empirical analysis notebook
 ├── founder_investor_network.html               # Project 1 interactive network visualizer
+├── Project2_Summary.docx                       # Plain-language executive summary with startup examples (300 words)
+├── Methodology_and_Models_Used project 2.docx  # Plain-language methodology & model guide (Word format)
+├── Methodology_and_Models_Used project 2.odt   # Plain-language methodology & model guide (ODT format)
+├── Methodology_and_Model_Justification.docx    # Step-by-step methodology & model selection guide
 ├── Project_Summary_Network_Analysis.docx       # Project 1 executive summary (<200 words)
-├── Methodology_and_Model_Justification.docx    # Project 1 methodology justification
 │
 ├── startup_funding.csv                         # Project 2 raw dataset (3,044 rounds, 2015-2020)
 ├── Startup_Funding_Prediction.ipynb            # Project 2 prediction notebook (executed, 26 cells)
